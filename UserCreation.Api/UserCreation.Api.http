@@ -1,0 +1,6 @@
+@UserCreation.Api_HostAddress = http://localhost:5078
+
+GET {{UserCreation.Api_HostAddress}}
+Accept: application/json
+
+###

@@ -1,0 +1,969 @@
+{
+	"info": {
+		"_postman_id": "7d41a38d-bad3-4a73-b3f6-ad439d8983fa",
+		"name": "UserCreation API",
+		"description": "Colección completa de endpoints para la API de UserCreation con arquitectura hexagonal.\n\n## Autenticación\n\nLa API utiliza JWT Bearer tokens. Primero ejecuta el endpoint de **Login** y luego los tokens se configuran automáticamente.\n\n## Flujo Recomendado\n\n1. **Auth** **→** Login (obtener token)\n    \n2. **Personas** **→** Crear persona\n    \n3. **Personas** **→** Consultar personas creadas\n    \n4. **Usuarios** **→** Crear usuario\n    \n\n## Arquitectura\n\n- Domain: Entidades puras\n    \n- Application: Casos de uso + DTOs\n    \n- Infrastructure: Repositorios + Servicios\n    \n- API: Controllers REST\n    \n\n## Tecnologias\n\n- .NET 8\n    \n- PostgreSQL\n    \n- JWT Authentication\n    \n- BCrypt Password Hashing\n    \n- Entity Framework Core",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "37263386"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login - Obtener JWT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Guardar token automáticamente en variable de colecci�n",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', response.accessToken);",
+									"    pm.collectionVariables.set('userId', response.userId);",
+									"    pm.collectionVariables.set('sessionId', response.sessionId);",
+									"    pm.collectionVariables.set('username', response.usuario);",
+									"    ",
+									"    console.log('Login exitoso');",
+									"    console.log('Token guardado:', response.accessToken.substring(0, 20) + '...');",
+									"    console.log('Usuario:', response.usuario);",
+									"    console.log('SessionId:', response.sessionId);",
+									"    console.log('Expira en:', response.expiresAt);",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Limpiar tokens anteriores",
+									"pm.collectionVariables.set('accessToken', '');",
+									"console.log('Intentando login...');"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"admin\",\n  \"pass\": \"Admin123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "**Endpoint de Login**\n\n### Descripción\n\nAutentica un usuario y retorna un JWT con información de sesión.\n\n### Credenciales por defecto\n\n- Usuario: `admin`\n    \n- Password: `Admin123!`\n    \n\n### ? Respuesta exitosa (200)\n\n``` json\n{\n  \"accessToken\": \"eyJhbGc...\",\n  \"expiresAt\": \"2026-01-21T02:31:00Z\",\n  \"sessionId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"userId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"usuario\": \"admin\"\n}\n\n ```\n\n### JWT Claims incluidos\n\n- `sub`: UserId (UUID)\n    \n- `unique_name`: Nombre de usuario\n    \n- `jti`: SessionId (UUID)\n    \n- `iat`: Timestamp de emisi�n\n    \n- `exp`: Timestamp de expiraci�n\n    \n\n### Errores posibles\n\n- **401 Unauthorized**: Credenciales incorrectas\n    \n- **400 Bad Request**: Datos de entrada inv�lidos"
+					},
+					"response": []
+				},
+				{
+					"name": "Login - Credenciales Incorrectas (Error)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 401 Unauthorized', function() {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Should return error message', function() {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"admin\",\n  \"pass\": \"wrongpassword\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Ejemplo de login con credenciales incorrectas para probar el manejo de errores."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints de autenticación JWT.",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Personas",
+			"item": [
+				{
+					"name": "Crear Persona - Cédula de Ciudadanía",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('lastPersonaId', response.identificador);",
+									"    ",
+									"    console.log('Persona creada exitosamente');",
+									"    console.log('ID:', response.identificador);",
+									"    console.log('Nombre Completo:', response.nombreCompleto);",
+									"    console.log('ID Completo:', response.idCompleto);",
+									"    ",
+									"    pm.test('Status code is 201', function() {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"    ",
+									"    pm.test('Response has required fields', function() {",
+									"        pm.expect(response).to.have.property('identificador');",
+									"        pm.expect(response).to.have.property('nombreCompleto');",
+									"        pm.expect(response).to.have.property('idCompleto');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez González\",\n  \"numeroIdentificacion\": \"1234567890\",\n  \"email\": \"juan.perez@example.com\",\n  \"tipoIdentificacion\": \"CC\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/personas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas"
+							]
+						},
+						"description": "**Crear una nueva persona**\n\n### Requiere autenticación\n\nEste endpoint requiere JWT Bearer token.\n\n### Validaciones\n\n- Email único en el sistema\n    \n- Combinación de tipo + número de identificación única\n    \n- Todos los campos obligatorios\n    \n- Email válido\n    \n\n### Características\n\n- **Columnas calculadas automáticas**:\n    \n    - `idCompleto`: Concatena tipo y número (ej: \"CC-1234567890\")\n        \n    - `nombreCompleto`: Concatena nombres y apellidos\n        \n- GUID generado automáticamente\n    \n- Fecha de creación automática\n    \n\n### Tipos de identificación válidos\n\n- **CC**: Cédula de Ciudadanía\n    \n- **CE**: Cédula de Extranjería\n    \n- **TI**: Tarjeta de Identidad\n    \n- **PP**: Pasaporte\n    \n\n### Respuesta exitosa (201)\n\n``` json\n{\n  \"identificador\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n  \"nombres\": \"Juan Carlos\",\n  \"apellidos\": \"Pérez González\",\n  \"numeroIdentificacion\": \"1234567890\",\n  \"email\": \"juan.perez@example.com\",\n  \"tipoIdentificacion\": \"CC\",\n  \"fechaCreacion\": \"2026-01-21T01:23:45Z\",\n  \"idCompleto\": \"CC-1234567890\",\n  \"nombreCompleto\": \"Juan Carlos Pérez González\"\n}\n\n ```\n\n### Errores posibles\n\n- **400 Bad Request**: Email o identificación duplicada\n    \n- **401 Unauthorized**: Token inválido o expirado\n    \n- **400 Bad Request**: Validación de datos fallida"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Persona - Cédula de Extranjería",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"María Fernanda\",\n  \"apellidos\": \"Rodríguez Martínez\",\n  \"numeroIdentificacion\": \"9876543210\",\n  \"email\": \"maria.rodriguez@example.com\",\n  \"tipoIdentificacion\": \"CE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/personas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas"
+							]
+						},
+						"description": "Ejemplo de creación de persona con Cédula de Extranjería."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Persona - Pasaporte",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"John\",\n  \"apellidos\": \"Smith\",\n  \"numeroIdentificacion\": \"AB123456\",\n  \"email\": \"john.smith@example.com\",\n  \"tipoIdentificacion\": \"PP\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/personas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas"
+							]
+						},
+						"description": "Ejemplo de creación de persona con Pasaporte internacional."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Personas Creadas - Todas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log(`Se encontraron ${response.length} personas`);",
+									"    ",
+									"    if (response.length > 0) {",
+									"        console.log('Primera persona:', response[0].nombreCompleto);",
+									"    }",
+									"    ",
+									"    pm.test('Status code is 200', function() {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"    ",
+									"    pm.test('Response is an array', function() {",
+									"        pm.expect(response).to.be.an('array');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/personas/creadas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas",
+								"creadas"
+							]
+						},
+						"description": "**Consultar todas las personas creadas**\n\n### Requiere autenticación\n\nEste endpoint requiere JWT Bearer token.\n\n### ? Respuesta exitosa (200)\n\n``` json\n[\n  {\n    \"identificador\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\",\n    \"nombres\": \"Juan Carlos\",\n    \"apellidos\": \"Pérez González\",\n    \"numeroIdentificacion\": \"1234567890\",\n    \"email\": \"juan.perez@example.com\",\n    \"tipoIdentificacion\": \"CC\",\n    \"fechaCreacion\": \"2026-01-21T01:23:45Z\",\n    \"idCompleto\": \"CC-1234567890\",\n    \"nombreCompleto\": \"Juan Carlos Pérez González\"\n  }\n]\n\n ```\n\n### Ordenamiento\n\nLos resultados vienen ordenados por `fechaCreacion` descendente (más recientes primero)."
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Personas Creadas - Con Filtro de Fechas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log(`Se encontraron ${response.length} personas en el rango de fechas`);",
+									"    ",
+									"    pm.test('Status code is 200', function() {",
+									"        pm.response.to.have.status(200);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/personas/creadas?desde=2026-01-01T00:00:00Z&hasta=2026-12-31T23:59:59Z",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas",
+								"creadas"
+							],
+							"query": [
+								{
+									"key": "desde",
+									"value": "2026-01-01T00:00:00Z",
+									"description": "Fecha desde (ISO 8601)"
+								},
+								{
+									"key": "hasta",
+									"value": "2026-12-31T23:59:59Z",
+									"description": "Fecha hasta (ISO 8601)"
+								}
+							]
+						},
+						"description": "**Consultar personas creadas en un rango de fechas**\n\n### Requiere autenticación\n\nEste endpoint requiere JWT Bearer token.\n\n### Parámetros opcionales\n\n- `desde`: Fecha inicio (ISO 8601 format)\n    \n- `hasta`: Fecha fin (ISO 8601 format)\n    \n\nAmbos parámetros son opcionales. Si no se proporcionan, retorna todas las personas.\n\n### Ejemplos de fechas\n\n- Hoy: `2026-01-21T00:00:00Z`\n    \n- Último mes: Calcular dinámicamente en el frontend\n    \n- Último año: `desde=2025-01-01T00:00:00Z`"
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Personas - Último Mes",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Calcular fecha de hace 1 mes",
+									"const ahora = new Date();",
+									"const hace1Mes = new Date();",
+									"hace1Mes.setMonth(ahora.getMonth() - 1);",
+									"",
+									"pm.collectionVariables.set('fechaHace1Mes', hace1Mes.toISOString());",
+									"pm.collectionVariables.set('fechaActual', ahora.toISOString());",
+									"",
+									"console.log('Consultando desde:', hace1Mes.toISOString());",
+									"console.log('Hasta:', ahora.toISOString());"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/personas/creadas?desde={{fechaHace1Mes}}&hasta={{fechaActual}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas",
+								"creadas"
+							],
+							"query": [
+								{
+									"key": "desde",
+									"value": "{{fechaHace1Mes}}",
+									"description": "Calculado dinámicamente: hace 1 mes"
+								},
+								{
+									"key": "hasta",
+									"value": "{{fechaActual}}",
+									"description": "Calculado dinámicamente: ahora"
+								}
+							]
+						},
+						"description": "Ejemplo con cálculo automático de fechas (último mes) usando scripts de Postman."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Persona - Email Duplicado (Error)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 400 Bad Request', function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Should return error message', function() {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"Test\",\n  \"apellidos\": \"Duplicado\",\n  \"numeroIdentificacion\": \"9999999999\",\n  \"email\": \"juan.perez@example.com\",\n  \"tipoIdentificacion\": \"CC\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/personas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas"
+							]
+						},
+						"description": "Intenta crear una persona con un email ya existente para probar validación."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Persona - Validación Fallida (Error)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 400 Bad Request', function() {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"nombres\": \"\",\n  \"apellidos\": \"Test\",\n  \"numeroIdentificacion\": \"123\",\n  \"email\": \"email-invalido\",\n  \"tipoIdentificacion\": \"CC\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/personas",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"personas"
+							]
+						},
+						"description": "Intenta crear una persona con datos inválidos para probar validaciones DataAnnotations."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de personas. Incluye creación y consulta con stored function.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accessToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Usuarios",
+			"item": [
+				{
+					"name": "Crear Usuario - Sin Persona",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('lastUsuarioId', response.identificador);",
+									"    ",
+									"    console.log('Usuario creado exitosamente');",
+									"    console.log('ID:', response.identificador);",
+									"    console.log('Usuario:', response.usuario);",
+									"    ",
+									"    pm.test('Status code is 201', function() {",
+									"        pm.response.to.have.status(201);",
+									"    });",
+									"    ",
+									"    pm.test('Response has required fields', function() {",
+									"        pm.expect(response).to.have.property('identificador');",
+									"        pm.expect(response).to.have.property('usuario');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"jperez\",\n  \"pass\": \"Password123!\",\n  \"personaId\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuarios"
+							]
+						},
+						"description": "**Crear un nuevo usuario**\n\n### Requiere autenticación\n\nEste endpoint requiere JWT Bearer token.\n\n### Seguridad\n\n- Contraseña hasheada con **BCrypt** (work factor 12)\n    \n- No se retorna el hash en la respuesta\n    \n- Usuario único en el sistema\n    \n\n### Validaciones\n\n- Usuario único\n    \n- Usuario: mínimo 3 caracteres, m�ximo 100\n    \n- Password: mínimo 6 caracteres\n    \n- PersonaId: opcional (puede ser null)\n    \n\n### Características\n\n- GUID generado automáticamente\n    \n- Fecha de creación automática\n    \n- Hash de contraseña seguro\n    \n- Relación opcional con Persona\n    \n\n### Respuesta exitosa (201)\n\n``` json\n{\n  \"identificador\": \"7b2c9f48-a1e3-4d5f-9c8b-3e4d5f6a7b8c\",\n  \"usuario\": \"jperez\",\n  \"fechaCreacion\": \"2026-01-21T01:30:00Z\",\n  \"personaId\": null\n}\n\n ```\n\n### ? Errores posibles\n\n- **400 Bad Request**: Usuario duplicado\n    \n- **401 Unauthorized**: Token inválido o expirado\n    \n- **400 Bad Request**: Validación de datos fallida"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Usuario - Vinculado a Persona",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Usar el ID de la �ltima persona creada",
+									"const personaId = pm.collectionVariables.get('lastPersonaId');",
+									"if (personaId) {",
+									"    console.log('Vinculando usuario a persona:', personaId);",
+									"} else {",
+									"    console.log('No hay personaId guardado. Se crear� sin v�nculo.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"mrodriguez\",\n  \"pass\": \"SecurePass456!\",\n  \"personaId\": \"{{lastPersonaId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuarios"
+							]
+						},
+						"description": "**Crear usuario vinculado a una persona**\n\nEste ejemplo vincula el usuario con la última persona creada (usa variable `lastPersonaId`).\n\n### Relación opcional\n\nEl campo `personaId` es opcional y permite:\n\n- Crear usuarios sin persona asociada\n    \n- Vincular usuario a persona existente\n    \n- Mantener trazabilidad entre entidades"
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Usuario - ID de Persona Específico",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"jsmith\",\n  \"pass\": \"MySecret789!\",\n  \"personaId\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuarios"
+							]
+						},
+						"description": "Ejemplo con un GUID específico de persona. Reemplaza el GUID con uno real de tu base de datos."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Usuario - Usuario Duplicado (Error)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 400 Bad Request', function() {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Should return error message', function() {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"admin\",\n  \"pass\": \"NewPassword123!\",\n  \"personaId\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuarios"
+							]
+						},
+						"description": "Intenta crear un usuario con nombre de usuario ya existente (admin) para probar validación."
+					},
+					"response": []
+				},
+				{
+					"name": "Crear Usuario - Validación Fallida (Error)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Should return 400 Bad Request', function() {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"usuario\": \"ab\",\n  \"pass\": \"123\",\n  \"personaId\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/usuarios",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"usuarios"
+							]
+						},
+						"description": "Intenta crear un usuario con datos que no cumplen las validaciones mínimas."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de usuarios. La contraseña se hashea con BCrypt.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accessToken}}",
+						"type": "string"
+					}
+				]
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://localhost:7124"
+		},
+		{
+			"key": "accessToken",
+			"value": ""
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "sessionId",
+			"value": ""
+		},
+		{
+			"key": "username",
+			"value": ""
+		},
+		{
+			"key": "lastPersonaId",
+			"value": ""
+		},
+		{
+			"key": "lastUsuarioId",
+			"value": ""
+		},
+		{
+			"key": "fechaHace1Mes",
+			"value": ""
+		},
+		{
+			"key": "fechaActual",
+			"value": ""
+		}
+	]
+}
