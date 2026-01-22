@@ -156,16 +156,9 @@ dotnet ef database update --project UserCreation.Infrastructure --startup-projec
 - 👤 Usuario: `admin`
 - 🔑 Password: `Admin123!`
 
-📖 **Guía detallada**: Ver `DATABASE_SETUP.md` para más información
-
-### 5. ~~Ejecutar stored function~~ (Ya no es necesario ✅)
-
-~~Ejecutar manualmente el script SQL ubicado en:~~
-~~`UserCreation.Infrastructure/Persistence/Scripts/fn_personas_creadas.sql`~~
-
 ✅ **La función SQL se crea automáticamente con las migraciones**
 
-### 6. Ejecutar la aplicación
+### 5. Ejecutar la aplicación
 
 ```bash
 cd UserCreation.Api
