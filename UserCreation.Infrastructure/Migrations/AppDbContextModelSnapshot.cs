@@ -67,6 +67,12 @@ namespace UserCreation.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nombres");
 
+                    b.Property<string>("NumeroCelular")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("numero_celular");
+
                     b.Property<string>("NumeroIdentificacion")
                         .IsRequired()
                         .HasMaxLength(50)

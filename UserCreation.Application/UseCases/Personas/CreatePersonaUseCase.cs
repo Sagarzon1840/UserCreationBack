@@ -18,16 +18,16 @@ public class CreatePersonaUseCase
 
     public async Task<PersonaResponse> ExecuteAsync(CreatePersonaRequest request, CancellationToken cancellationToken = default)
     {
-        // Validar email único
+        // Validar email Ãºnico
         if (await _personaRepository.EmailExistsAsync(request.Email, cancellationToken))
         {
-            throw new InvalidOperationException($"El email {request.Email} ya está registrado.");
+            throw new InvalidOperationException($"El email {request.Email} ya estÃ¡ registrado.");
         }
 
-        // Validar número de identificación único
+        // Validar numero de identificacion unico
         if (await _personaRepository.NumeroIdentificacionExistsAsync(request.NumeroIdentificacion, request.TipoIdentificacion, cancellationToken))
         {
-            throw new InvalidOperationException($"El número de identificación {request.NumeroIdentificacion} de tipo {request.TipoIdentificacion} ya está registrado.");
+            throw new InvalidOperationException($"El numero de identificacion {request.NumeroIdentificacion} de tipo {request.TipoIdentificacion} ya esta registrado.");
         }
 
         var persona = new Persona
@@ -38,7 +38,8 @@ public class CreatePersonaUseCase
             NumeroIdentificacion = request.NumeroIdentificacion,
             Email = request.Email,
             TipoIdentificacion = request.TipoIdentificacion,
-            FechaCreacion = DateTimeOffset.UtcNow
+            FechaCreacion = DateTimeOffset.UtcNow,
+            NumeroCelular = request.NumeroCelular
         };
 
         var createdPersona = await _personaRepository.InsertAsync(persona, cancellationToken);
@@ -52,7 +53,8 @@ public class CreatePersonaUseCase
             createdPersona.TipoIdentificacion,
             createdPersona.FechaCreacion,
             createdPersona.IdCompleto,
-            createdPersona.NombreCompleto
+            createdPersona.NombreCompleto,
+            createdPersona.NumeroCelular
         );
     }
 }

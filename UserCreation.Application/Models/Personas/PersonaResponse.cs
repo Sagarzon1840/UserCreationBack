@@ -12,5 +12,6 @@ public record PersonaResponse(
     string TipoIdentificacion,
     DateTimeOffset FechaCreacion,
     string IdCompleto,
-    string NombreCompleto
+    string NombreCompleto,
+    string NumeroCelular
 );

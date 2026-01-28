@@ -20,13 +20,13 @@ public class CreateUsuarioUseCase
 
     public async Task<UsuarioResponse> ExecuteAsync(CreateUsuarioRequest request, CancellationToken cancellationToken = default)
     {
-        // Validar username único
+        // Validar username Ãºnico
         if (await _usuarioRepository.UsernameExistsAsync(request.Usuario, cancellationToken))
         {
-            throw new InvalidOperationException($"El usuario {request.Usuario} ya está registrado.");
+            throw new InvalidOperationException($"El usuario {request.Usuario} ya estÃ¡ registrado.");
         }
 
-        // Hash de contraseña
+        // Hash de contraseÃ±a
         var passHash = _passwordHasher.Hash(request.Pass);
 
         var usuario = new Usuario

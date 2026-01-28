@@ -64,7 +64,7 @@ public class Startup
             {
                 Title = "UserCreation API",
                 Version = "v1",
-                Description = "API to spending control, deposits and monthly info per type.",
+                Description = "API to control basic user creation.",
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

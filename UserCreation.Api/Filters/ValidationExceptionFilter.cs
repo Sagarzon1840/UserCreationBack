@@ -7,7 +7,6 @@ namespace UserCreation.Api.Filters
     {
         public void OnException(ExceptionContext context)
         {
-            // Simple passthrough for now
             if (context.Exception is ArgumentException)
             {
                 context.Result = new BadRequestObjectResult(new { error = context.Exception.Message });

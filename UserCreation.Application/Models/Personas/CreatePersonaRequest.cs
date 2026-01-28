@@ -25,5 +25,9 @@ public record CreatePersonaRequest(
 
     [Required(ErrorMessage = "El tipo de identificación es obligatorio")]
     [StringLength(50, ErrorMessage = "El tipo de identificación no puede exceder 50 caracteres")]
-    string TipoIdentificacion
+    string TipoIdentificacion,
+
+    [Required(ErrorMessage = "El número de celular es obligatorio")]
+    [StringLength(16, ErrorMessage = "El número de celular no puede exceder 16 caracteres")]
+    string NumeroCelular
 );

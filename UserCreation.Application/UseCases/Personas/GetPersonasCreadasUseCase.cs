@@ -28,7 +28,8 @@ public class GetPersonasCreadasUseCase
             p.TipoIdentificacion,
             p.FechaCreacion,
             p.IdCompleto,
-            p.NombreCompleto
+            p.NombreCompleto,
+            p.NumeroCelular
         )).ToList();
     }
 }

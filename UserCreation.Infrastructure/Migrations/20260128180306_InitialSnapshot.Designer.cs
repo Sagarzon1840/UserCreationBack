@@ -12,8 +12,8 @@ using UserCreation.Infrastructure.Persistence;
 namespace UserCreation.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260121013151_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260128180306_InitialSnapshot")]
+    partial class InitialSnapshot
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -69,6 +69,12 @@ namespace UserCreation.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("nombres");
+
+                    b.Property<string>("NumeroCelular")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("numero_celular");
 
                     b.Property<string>("NumeroIdentificacion")
                         .IsRequired()

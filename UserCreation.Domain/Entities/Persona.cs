@@ -12,8 +12,10 @@ public class Persona
     public string Email { get; set; } = string.Empty;
     public string TipoIdentificacion { get; set; } = string.Empty;
     public DateTimeOffset FechaCreacion { get; set; }
+    public string NumeroCelular { get; set; }
 
     // Columnas calculadas (computed columns en BD)
     public string IdCompleto { get; set; } = string.Empty;
     public string NombreCompleto { get; set; } = string.Empty;
+
 }
